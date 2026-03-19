@@ -91,6 +91,8 @@ TODO_PERMISSIONS=(
   "Write($HOME_DIR/.claude/todo-plans/*)"
   "Edit($HOME_DIR/.claude/todo-plans/*)"
   "Read($HOME_DIR/.claude/todo-config.json)"
+  "Read($HOME_DIR/.claude/todo-last-seen-version)"
+  "Write($HOME_DIR/.claude/todo-last-seen-version)"
   "Read($HOME_DIR/.claude/skills/todo/*)"
 )
 

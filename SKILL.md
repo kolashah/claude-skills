@@ -23,6 +23,12 @@ On **every invocation**, before processing any command, resolve these runtime va
 
 **CRITICAL: Always use the resolved absolute `$HOME_DIR` paths** (e.g., `/Users/jane/.claude/todos.json`), never `~/.claude/` or relative paths. This is required for permission auto-approval.
 
+5. **Release notes check** — compare the first `## vX.Y.Z` line in `${CLAUDE_SKILL_DIR}/RELEASE_NOTES.md` against `$HOME_DIR/.claude/todo-last-seen-version`. If the file is missing or the version differs:
+   - Read `RELEASE_NOTES.md` and extract everything under the latest `## vX.Y.Z` heading (stop at the next `## ` or end of file).
+   - Display it to the user in a box: `**🆕 /minion updated to vX.Y.Z:**` followed by the notes.
+   - Write the new version string to `$HOME_DIR/.claude/todo-last-seen-version`.
+   - If versions match, skip silently.
+
 Cache these values for the duration of the conversation — only resolve once.
 
 ## Help Output
