@@ -22,7 +22,7 @@ After adding, the skill:
 2. Spawns a **background planner agent** that explores the repo, reads CLAUDE.md conventions, checks recent commits, and writes a detailed implementation plan
 3. When ready, you review the plan and either execute it or adjust
 4. The **executor agent** implements the plan in an isolated git worktree, runs formatters/linters/tests, commits, pushes, and opens a PR
-5. When reviewers leave comments, the **reviewer agent** triages them, fixes valid issues, dismisses noise, and force-pushes
+5. When reviewers leave comments, the **reviewer agent** triages them, fixes valid issues, dismisses noise, and pushes the fixes
 
 You stay in control at every step. The minions do the grunt work.
 
@@ -139,6 +139,7 @@ Edit this file anytime to add, remove, or rename shorthands. You can also pass a
 | `/minion batch execute <ids> [base]` | Execute multiple tasks in parallel worktrees |
 | `/minion watch <id>` | Monitor a task and notify on state changes (uses `/loop`) |
 | `/minion review <id> fix:1,3 dismiss:2` | Override auto-assigned review verdicts |
+| `/minion config [key] [value]` | Show or toggle settings (e.g., `squashCommits`) |
 | `/minion pr` | Commit local skill changes and open a PR to the shared repo |
 
 ## Status flow

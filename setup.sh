@@ -1,6 +1,6 @@
 #!/bin/bash
-# Setup script for the /todo Claude Code skill
-# Run: bash ~/.claude/skills/todo/setup.sh
+# Setup script for the /minion Claude Code skill
+# Run: bash ~/.claude/skills/minion/setup.sh
 
 set -e
 
@@ -11,7 +11,7 @@ SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 TODOS_FILE="$CLAUDE_DIR/todos.json"
 PLANS_DIR="$CLAUDE_DIR/todo-plans"
 
-echo "=== /todo skill setup ==="
+echo "=== /minion skill setup ==="
 echo ""
 
 # 1. Create todo-plans directory
@@ -81,7 +81,10 @@ fi
 
 # 4. Add permissions to settings.json
 echo ""
-echo "Adding /todo permissions to $SETTINGS_FILE..."
+echo "Adding /minion permissions to $SETTINGS_FILE..."
+
+# Resolve the skill directory (where this script lives)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 TODO_PERMISSIONS=(
   "Read($HOME_DIR/.claude/todos.json)"
@@ -91,9 +94,10 @@ TODO_PERMISSIONS=(
   "Write($HOME_DIR/.claude/todo-plans/*)"
   "Edit($HOME_DIR/.claude/todo-plans/*)"
   "Read($HOME_DIR/.claude/todo-config.json)"
+  "Edit($HOME_DIR/.claude/todo-config.json)"
   "Read($HOME_DIR/.claude/todo-last-seen-version)"
   "Write($HOME_DIR/.claude/todo-last-seen-version)"
-  "Read($HOME_DIR/.claude/skills/todo/*)"
+  "Read($SCRIPT_DIR/*)"
 )
 
 if [ ! -f "$SETTINGS_FILE" ]; then
@@ -114,7 +118,7 @@ if [ ! -f "$SETTINGS_FILE" ]; then
   }
 }
 SETTINGSEOF
-  echo "✓ Created $SETTINGS_FILE with /todo permissions"
+  echo "✓ Created $SETTINGS_FILE with /minion permissions"
 else
   # Check which permissions are missing and add them
   ADDED=0
@@ -138,7 +142,7 @@ with open('$SETTINGS_FILE', 'w') as f:
   if [ $ADDED -gt 0 ]; then
     echo "✓ Added $ADDED permission(s) to $SETTINGS_FILE"
   else
-    echo "✓ All /todo permissions already present"
+    echo "✓ All /minion permissions already present"
   fi
 fi
 
@@ -146,8 +150,8 @@ echo ""
 echo "=== Setup complete ==="
 echo ""
 echo "Usage:"
-echo "  /todo add <repo-shorthand> <description>"
-echo "  /todo list"
-echo "  /todo help"
+echo "  /minion add <repo-shorthand> <description>"
+echo "  /minion list"
+echo "  /minion help"
 echo ""
 echo "To add more repos later, edit $CONFIG_FILE"

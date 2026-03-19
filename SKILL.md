@@ -15,7 +15,7 @@ On **every invocation**, before processing any command, resolve these runtime va
 
 1. **`$HOME_DIR`** — run `echo $HOME` via Bash to get the user's home directory (e.g., `/Users/jane`). All file paths use this.
 2. **`$GIT_USER`** — run `git config user.name` or fall back to `whoami`. Used for branch name prefixes.
-3. **`$TODO_CONFIG`** — read `$HOME_DIR/.claude/todo-config.json` if it exists. Contains repo shorthands. If missing, tell user: "Run the setup script first: `bash ~/.claude/skills/todo/setup.sh`" and stop.
+3. **`$TODO_CONFIG`** — read `$HOME_DIR/.claude/todo-config.json` if it exists. Contains repo shorthands. If missing, tell user: "Run the setup script first: `bash ~/.claude/skills/minion/setup.sh`" and stop.
 4. **File paths** — derive from `$HOME_DIR`:
    - JSON: `$HOME_DIR/.claude/todos.json`
    - Plans dir: `$HOME_DIR/.claude/todo-plans/`
@@ -39,7 +39,7 @@ Cache these values for the duration of the conversation — only resolve once.
 When help is requested, first read `$HOME_DIR/.claude/todo-config.json` to get the user's configured repo shorthands, then display:
 
 ```
-/todo — Cross-repo todo list with background planning & execution
+/minion — Cross-repo todo list with background planning & execution
 
 Commands:
   add <repo> <description>        Add a task and auto-plan in background
@@ -68,37 +68,37 @@ Status flow:
                                                                  ↳ cancelled
 
 Examples:
-  /todo add crm make page tabs sticky
-  /todo execute 3 my-feature-branch
-  /todo execute 3 my-feature-branch release/1.5.0
-  /todo status 3
-  /todo chat 2 tell me about the architectural tradeoffs
-  /todo batch execute 3,4,5 release/1.5.0
-  /todo watch 3
+  /minion add crm make page tabs sticky
+  /minion execute 3 my-feature-branch
+  /minion execute 3 my-feature-branch release/1.5.0
+  /minion status 3
+  /minion chat 2 tell me about the architectural tradeoffs
+  /minion batch execute 3,4,5 release/1.5.0
+  /minion watch 3
 
-Tip: Run /loop 5m /todo list for periodic status updates.
+Tip: Run /loop 5m /minion list for periodic status updates.
 ```
 
 ## Commands
 
 | Command | Example |
 |---------|---------|
-| `add <repo> <description>` | `/todo add crm add rate limiting to the users endpoint` |
-| `list` | `/todo list` |
-| `status <id>` | `/todo status 3` |
-| `update <id> <note>` | `/todo update 3 only affects settings page` |
-| `done <id>` | `/todo done 3` |
-| `remove <id>` | `/todo remove 3` |
-| `plan <id>` | `/todo plan 3` (re-run planner) |
-| `execute <id> <branch> [base]` | `/todo execute 3 my-feature-branch release/1.5.0` |
-| `chat <id> <message>` | `/todo chat 2 what tradeoffs did you consider` |
-| `review <id> [--dry-run] [fix:N dismiss:N]` | `/todo review 2 --dry-run` or `/todo review 2 fix:2 dismiss:3` |
-| `batch execute <ids> [base]` | `/todo batch execute 3,4,5 release/1.5.0` |
-| `watch <id>` | `/todo watch 3` |
-| `config [key] [value]` | `/todo config` or `/todo config squashCommits true` |
-| `pr` | `/todo pr` |
-| `cancel <id>` | `/todo cancel 3` |
-| `clean` | `/todo clean` |
+| `add <repo> <description>` | `/minion add crm add rate limiting to the users endpoint` |
+| `list` | `/minion list` |
+| `status <id>` | `/minion status 3` |
+| `update <id> <note>` | `/minion update 3 only affects settings page` |
+| `done <id>` | `/minion done 3` |
+| `remove <id>` | `/minion remove 3` |
+| `plan <id>` | `/minion plan 3` (re-run planner) |
+| `execute <id> <branch> [base]` | `/minion execute 3 my-feature-branch release/1.5.0` |
+| `chat <id> <message>` | `/minion chat 2 what tradeoffs did you consider` |
+| `review <id> [--dry-run] [fix:N dismiss:N]` | `/minion review 2 --dry-run` or `/minion review 2 fix:2 dismiss:3` |
+| `batch execute <ids> [base]` | `/minion batch execute 3,4,5 release/1.5.0` |
+| `watch <id>` | `/minion watch 3` |
+| `config [key] [value]` | `/minion config` or `/minion config squashCommits true` |
+| `pr` | `/minion pr` |
+| `cancel <id>` | `/minion cancel 3` |
+| `clean` | `/minion clean` |
 
 ## Repos
 
@@ -153,7 +153,7 @@ Plan and result files are always at `$HOME_DIR/.claude/todo-plans/plan-{id}.md`,
 2. If task is ambiguous, ask 1-2 brief scoping questions. Skip if already clear.
 3. Save todo with status `not started`, scoping answers in `notes`.
 4. Display table, then set status `planning...` and spawn background planner (see Agents).
-5. First time per conversation, mention: "Tip: Run `/loop 5m /todo list` for periodic updates."
+5. First time per conversation, mention: "Tip: Run `/loop 5m /minion list` for periodic updates."
 
 ### `list`
 Render markdown table: `ID | Repo | Description | Status | Branch / PR | Created`
@@ -169,7 +169,7 @@ Reconcile only non-terminal statuses in **one parallel batch**:
    ```
 2. Parse the labeled output and update statuses. **Ignore any line that doesn't match the `CHECK:` prefix** — this prevents stray stderr or warnings from corrupting results:
    - `planning...` → if plan file exists, read verdict line, update to `plan ready` with verdict (`auto-execute`/`review`/`needs-input`). **Stale detection:** if plan file does NOT exist and `updated` timestamp is older than 15 minutes, reset status to `not started` and append note `[system] Planner timed out — reset to not started`.
-   - `in progress` → if result file exists, update to `pr open`, extract PR URL. **Stale detection:** if result file does NOT exist and `updated` timestamp is older than 30 minutes, append note `[system] Executor may be stuck — consider re-running /todo execute`.
+   - `in progress` → if result file exists, update to `pr open`, extract PR URL. **Stale detection:** if result file does NOT exist and `updated` timestamp is older than 30 minutes, append note `[system] Executor may be stuck — consider re-running /minion execute`.
    - `pr open` → **always** run `gh pr view` for these items (merge check is never throttled). If `MERGED` → `complete`. If still open, only check `reviews` for `CHANGES_REQUESTED` if `lastReviewCheck` is older than 10 minutes.
 3. Write JSON once with all updates.
 4. Render table. No narration between steps.
@@ -209,7 +209,7 @@ Execute multiple `plan ready` todos in parallel, each in its own worktree.
    | 4  | resident | jane/resident-todo-4 | main | launched |
    | 5  | crm  | jane/crm-todo-5 | release/1.5.0 | skipped (not plan ready) |
    ```
-9. Tell user: "Use `/todo list` to check progress."
+9. Tell user: "Use `/minion list` to check progress."
 
 ### `watch <id>`
 Monitor a todo and proactively notify when its state changes. Uses `/loop` under the hood.
@@ -220,22 +220,22 @@ Monitor a todo and proactively notify when its state changes. Uses `/loop` under
    - `in progress` → check if result file exists
    - `pr open` → check if PR merged or has new review comments
 3. On each loop iteration, compare against the baseline status. **Only output if something changed:**
-   - `planning... → plan ready`: "Todo #{id} plan is ready (verdict: {verdict}). Run `/todo status {id}` to review, or `/todo execute {id} <branch>` to start."
+   - `planning... → plan ready`: "Todo #{id} plan is ready (verdict: {verdict}). Run `/minion status {id}` to review, or `/minion execute {id} <branch>` to start."
    - `in progress → pr open`: "Todo #{id} PR created: {pr url}"
    - `pr open → complete`: "Todo #{id} PR merged!"
-   - `pr open` + new review comments: "Todo #{id} has new review comments. Run `/todo review {id} --dry-run` to triage."
+   - `pr open` + new review comments: "Todo #{id} has new review comments. Run `/minion review {id} --dry-run` to triage."
    - If nothing changed, output nothing (silent iteration).
 4. Auto-stop the loop when the todo reaches a terminal status (`complete`, `cancelled`).
 5. Update `lastReviewCheck` when checking PR status to stay in sync with throttling rules.
 
-**Implementation:** This command invokes the `/loop` skill internally. The loop body is a mini version of `list` reconciliation scoped to one todo. The key difference from `/loop 5m /todo list` is: (a) faster interval (2m vs 5m), (b) only checks one item, (c) silent when nothing changed, (d) auto-stops on completion.
+**Implementation:** This command invokes the `/loop` skill internally. The loop body is a mini version of `list` reconciliation scoped to one todo. The key difference from `/loop 5m /minion list` is: (a) faster interval (2m vs 5m), (b) only checks one item, (c) silent when nothing changed, (d) auto-stops on completion.
 
 ### `config [key] [value]`
 Show or update settings in `$HOME_DIR/.claude/todo-config.json`. Fast-path — no status reconciliation.
 
-- **No args** (`/todo config`): display current config as a formatted table.
-- **Key only** (`/todo config squashCommits`): display that setting's current value.
-- **Key + value** (`/todo config squashCommits true`): update the setting, write the file, confirm. Boolean values accept `true`/`false`. The `repos` field cannot be set this way — edit the JSON directly.
+- **No args** (`/minion config`): display current config as a formatted table.
+- **Key only** (`/minion config squashCommits`): display that setting's current value.
+- **Key + value** (`/minion config squashCommits true`): update the setting, write the file, confirm. Boolean values accept `true`/`false`. The `repos` field cannot be set this way — edit the JSON directly.
 
 ### `pr`
 Commit and open a PR for any local changes to the skill files. Automatically bumps the version and adds release notes.
@@ -296,9 +296,9 @@ Auto-address PR review comments from AI reviewers or human reviewers.
 
 **Example flow:**
 ```
-/todo review 7 --dry-run          → shows numbered table with auto verdicts
-/todo review 7 fix:2 dismiss:3   → runs with comment #2 forced to fix, #3 to dismiss
-/todo review 7                    → runs with all auto verdicts (no overrides)
+/minion review 7 --dry-run          → shows numbered table with auto verdicts
+/minion review 7 fix:2 dismiss:3   → runs with comment #2 forced to fix, #3 to dismiss
+/minion review 7                    → runs with all auto verdicts (no overrides)
 ```
 
 ### `plan <id>`
@@ -313,7 +313,7 @@ Reset status to `planning...`. Spawn background planner. This also works for tod
 6. Read executor prompt template from `${CLAUDE_SKILL_DIR}/executor-prompt.md`.
 7. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{branch}`, `{baseBranch}`, `{id}`, `{homedir}`, `{squashCommits}`, and `{plan contents}` in the template.
 8. Spawn Agent with `run_in_background: true` and `isolation: "worktree"` using the filled prompt.
-9. Tell user: "Execution started for todo #{id} on branch `{branch}` (base: `{baseBranch || auto-detect}`). Use `/todo status {id}` to check progress."
+9. Tell user: "Execution started for todo #{id} on branch `{branch}` (base: `{baseBranch || auto-detect}`). Use `/minion status {id}` to check progress."
 
 ## Agents
 
@@ -321,4 +321,4 @@ Reset status to `planning...`. Spawn background planner. This also works for tod
 1. Read template from `${CLAUDE_SKILL_DIR}/planner-prompt.md`.
 2. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{id}`, `{description}`, `{repo}`, `{homedir}` in the template.
 3. Spawn Agent with `run_in_background: true` using the filled prompt.
-4. Tell user: "Background planner started for todo #{id}. Use `/todo list` or `/todo status {id}` to check when ready."
+4. Tell user: "Background planner started for todo #{id}. Use `/minion list` or `/minion status {id}` to check when ready."

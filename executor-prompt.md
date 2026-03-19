@@ -17,18 +17,18 @@
    - Otherwise, auto-detect: run `git branch -r --sort=-creatordate | grep 'origin/release/' | head -1` to find the latest release branch. If one exists, use it. If none, use `main`.
    - Run `git fetch origin <base>` and `git checkout <base>` before creating your feature branch.
 3. Create and checkout the branch: `git checkout -b {branch}`
-3. Read the project's CLAUDE.md if it exists and follow all coding conventions strictly.
-4. Implement the plan step by step. Write clean, production-quality code.
-5. After making changes, run any relevant code generation commands if needed (e.g., `flutter pub run build_runner build --delete-conflicting-outputs` for Dart/Flutter projects with Freezed/JsonSerializable changes).
-6. If you modified any localization files (`.arb` files), run `flutter gen-l10n` to regenerate localizations. If the project has a sort script (e.g., `dart run tool/sort_arb.dart`), run that too. This must happen before formatting.
-7. Run the formatter and analyzer:
-   - Check if a `Makefile` exists with a `format` target: run `make format` if so.
-   - Otherwise: run `dart format .` for Dart/Flutter projects.
-   - **ALWAYS run `flutter analyze`** for Flutter projects. Fix any warnings or errors before committing. The commit hook will reject unformatted code, but it does NOT check analyzer — you must run it explicitly.
-7. Check if any existing test files cover the code you changed. Search for test files that import or reference the modified files (e.g., `grep -r 'modified_file' test/`). If tests exist, update them to reflect your changes so they pass. Run `flutter test` (or the relevant test command) to verify.
-8. Commit your changes with a clear commit message describing what was done.
-9. Push the branch to remote: `git push -u origin {branch}`
-10. Create a PR targeting the base branch using `gh pr create --base <base-branch>` with a clear title and body summarizing the changes. The body should follow this format:
+4. Read the project's CLAUDE.md if it exists and follow all coding conventions strictly.
+5. Implement the plan step by step. Write clean, production-quality code.
+6. After making changes, run any relevant code generation commands if the project uses them (e.g., `flutter pub run build_runner build --delete-conflicting-outputs` for Dart/Flutter, `npm run generate` for TypeScript, etc.). Check the project's CLAUDE.md or Makefile for the correct commands.
+7. If you modified any localization/i18n files, run the project's localization generation command (e.g., `flutter gen-l10n` for Flutter, etc.). Check CLAUDE.md for project-specific instructions.
+8. Run the project's formatter and linter/analyzer:
+   - Check if a `Makefile` exists with a `format` or `lint` target and use those.
+   - Otherwise, use the standard tools for the project's language (e.g., `dart format .` + `flutter analyze` for Flutter, `prettier` + `eslint` for JS/TS, `black` + `ruff` for Python, etc.).
+   - Fix any warnings or errors before committing.
+9. Check if any existing test files cover the code you changed. Search for test files that import or reference the modified files. If tests exist, update them to reflect your changes so they pass. Run the project's test command to verify.
+10. Commit your changes with a clear commit message describing what was done.
+11. Push the branch to remote: `git push -u origin {branch}`
+12. Create a PR targeting the base branch using `gh pr create --base <base-branch>` with a clear title and body summarizing the changes. The body should follow this format:
     ```
     ## Summary
     - bullet points of what changed
@@ -39,8 +39,8 @@
     ## Test Plan
     - testing steps
     ```
-11. After creating the PR, update `{homedir}/.claude/todos.json`: set the todo's `status` to `pr open`, save the PR URL in `pr`, and **write the resolved base branch back to `baseBranch`** (so the JSON reflects what was actually used, even if auto-detected). Update the `updated` timestamp.
-12. Write a summary of what you did to `{homedir}/.claude/todo-plans/result-{id}.md` in this format:
+13. After creating the PR, update `{homedir}/.claude/todos.json`: set the todo's `status` to `pr open`, save the PR URL in `pr`, and **write the resolved base branch back to `baseBranch`** (so the JSON reflects what was actually used, even if auto-detected). Update the `updated` timestamp.
+14. Write a summary of what you did to `{homedir}/.claude/todo-plans/result-{id}.md` in this format:
 
 ```markdown
 # Result: {description}

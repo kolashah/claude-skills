@@ -19,15 +19,15 @@
 4. For each comment marked **dismiss**:
    - Reply to the comment on the PR via `gh api repos/{owner}/{repo}/pulls/{number}/comments -f body="..."` explaining why it was dismissed (keep it brief and professional).
 5. After all fixes:
-   - Run code generation if needed (`flutter pub run build_runner build --delete-conflicting-outputs`).
-   - If localization files were touched: run `flutter gen-l10n`. If the project has a sort script, run that too.
-   - Run formatter: check for `Makefile` with `format` target first (`make format`), otherwise `dart format .`.
-   - Run analyzer: `flutter analyze` or equivalent.
+   - Run code generation if the project uses it (check CLAUDE.md or Makefile for the correct command).
+   - If localization/i18n files were touched, run the project's localization generation command.
+   - Run the project's formatter: check for a `Makefile` with a `format` target first, otherwise use the standard tool for the language.
+   - Run the project's linter/analyzer. Fix any warnings or errors.
    - Check and update tests if affected.
 6. Check `{squashCommits}`:
    - If **true**: amend the existing commit (`git add -A && git commit --amend --no-edit`) and force push (`git push --force-with-lease`).
    - If **false** (default): create a new commit describing the review fixes (`git add -A && git commit -m "Address review feedback"`) and push normally (`git push`).
-8. Write a summary of what was addressed to `{homedir}/.claude/todo-plans/review-{id}.md`:
+7. Write a summary of what was addressed to `{homedir}/.claude/todo-plans/review-{id}.md`:
 
 ```markdown
 # Review Response: {description}
