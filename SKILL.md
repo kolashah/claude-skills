@@ -255,9 +255,19 @@ Commit and open a PR for any local changes to the skill files. Automatically bum
 8. Stage all changes (including the updated `RELEASE_NOTES.md`): `git add -A`
 9. Commit with message: `vX.Y.Z: <user's description>`
 10. Push: `git push -u origin HEAD`
-11. Create a PR via `gh pr create` with:
+11. Create a PR via `gh pr create` using a HEREDOC body in this format:
     - Title: `vX.Y.Z: <user's description>`
-    - Body: the release notes entry + the full `git diff` wrapped in a details block
+    - Body:
+    ```
+    ## What changed
+    <1-3 sentences explaining what was added, removed, or modified and why. Written for someone who uses the skill, not someone reading the code.>
+
+    ## How to use it
+    <Show the new/changed commands or config options with example invocations. Skip this section if the change is purely internal (e.g., bug fix, performance improvement) with no user-facing difference.>
+
+    ## Release notes (vX.Y.Z)
+    <Paste the bullet points from the RELEASE_NOTES.md entry you just wrote.>
+    ```
 12. Switch back to `main`: `git checkout main`
 13. Display the PR URL.
 
