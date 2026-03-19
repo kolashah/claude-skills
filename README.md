@@ -4,20 +4,33 @@ A [Claude Code](https://claude.com/claude-code) skill that manages a cross-repo 
 
 ## What it does
 
-`/minion` turns a one-line task description into a planned, implemented, and PR'd code change — without leaving your terminal.
+`/minion` turns task descriptions into planned, implemented, and PR'd code changes — without leaving your terminal. Tasks can be anything from a quick one-liner to a detailed multi-line description with context from Slack threads, Linear issues, or pasted conversations.
 
-```
-/minion add crm make page tabs sticky
+```bash
+# A quick one-liner
+/minion add api add rate limiting to the /users endpoint
+
+# A detailed, multi-line task with scoping notes
+/minion add crm add a blocking privacy policy screen that users must accept
+  on first install before accessing the app. Use a WebView to load
+  https://eliseai.com/policy, add a checkbox + accept button. Store
+  acceptance in SharedPreferences, don't reset on logout.
+
+# With Slack context — pull in a full conversation thread
+/minion add api fix the webhook retry logic --slack https://slack.com/archives/C0X.../p1234
+
+# Search Slack for relevant context
+/minion add web fix dashboard latency --slack "dashboard slow after deploy"
 ```
 
-This will:
-1. Scope the task and ask clarifying questions if needed
-2. Spawn a **background planner agent** that explores the repo, reads conventions, checks recent commits, and writes a detailed implementation plan
+After adding, the skill:
+1. Scopes the task — asks clarifying questions if anything is ambiguous, skips if the description (or Slack context) is clear enough
+2. Spawns a **background planner agent** that explores the repo, reads CLAUDE.md conventions, checks recent commits, and writes a detailed implementation plan
 3. When ready, you review the plan and either execute it or adjust
 4. The **executor agent** implements the plan in an isolated git worktree, runs formatters/linters/tests, commits, pushes, and opens a PR
 5. When reviewers leave comments, the **reviewer agent** triages them, fixes valid issues, dismisses noise, and force-pushes
 
-You stay in control at every step. The agents do the grunt work.
+You stay in control at every step. The minions do the grunt work.
 
 ## Architecture
 
@@ -58,12 +71,14 @@ After planning, each task gets a verdict:
 - [Claude Code](https://claude.com/claude-code) CLI installed
 - `gh` CLI authenticated (`gh auth status`)
 - Git configured (`git config user.name`)
+- Slack MCP server configured (optional, for `--slack` flag)
+- Linear MCP server configured (optional, for linking Linear issues)
 
 ### Setup
 
 ```bash
 # Clone into your Claude Code skills directory
-git clone git@github.com:MeetElise/claude-skills.git ~/.claude/skills/minion
+git clone git@github.com:kolashah/claude-skills.git ~/.claude/skills/minion
 
 # Run the interactive setup script
 bash ~/.claude/skills/minion/setup.sh
@@ -134,71 +149,99 @@ not started → planning... → plan ready → in progress → pr open → compl
                                                                 ↳ cancelled
 ```
 
-- **not started** → task just added, planner about to start
-- **planning...** → background planner agent is exploring the repo
-- **plan ready** → plan written, waiting for you to review/execute
-- **in progress** → executor agent is implementing in a worktree
-- **pr open** → PR created, waiting for review/merge
-- **complete** → PR merged (auto-detected)
-- **cancelled** → PR closed, branch deleted
+- **not started** — task just added, planner about to start
+- **planning...** — background planner agent is exploring the repo
+- **plan ready** — plan written, waiting for you to review/execute
+- **in progress** — executor agent is implementing in a worktree
+- **pr open** — PR created, waiting for review/merge
+- **complete** — PR merged (auto-detected)
+- **cancelled** — PR closed, branch deleted
 
 ## Usage examples
 
-### Basic flow
+### Bug fix from a Slack escalation
+
+A teammate reports a bug in Slack. You pull the full conversation into the task so the planner has context on what broke, when, and who's affected:
 
 ```bash
-# Add a task — planner starts automatically in background
-/minion add crm make the settings page tabs sticky
+/minion add api fix the webhook retry logic --slack https://slack.com/archives/C0X.../p1234
 
-# Check status after a minute or two
+/minion list                       # check when plan is ready
+/minion status 5                   # review the plan
+/minion execute 5 fix/webhook-retry
+```
+
+### Feature implementation with detailed spec
+
+You know exactly what you want. Give a thorough description upfront so the planner doesn't need to ask questions:
+
+```bash
+/minion add resident add a payment method details bottom sheet that shows
+  card type, last 4 digits, expiry, and a "set as default" button.
+  Follow the existing AppBottomSheet pattern with a static show() method.
+  Wire it to the PaymentsCubit.setDefaultMethod action.
+```
+
+### Quick refactor across files
+
+Small, mechanical changes that touch several files but follow an obvious pattern:
+
+```bash
+/minion add web rename all instances of UserProfile to ResidentProfile
+  in the dashboard module. Update imports, types, and test references.
+
+# Plan comes back as auto-execute (low risk, mechanical)
+/minion execute 12 refactor/resident-profile-rename
+```
+
+### Sprint batch — plan and execute multiple tasks
+
+Queue up several tasks, let them all plan in background, then execute in parallel:
+
+```bash
+/minion add crm add created_at column to the leads table
+/minion add crm make the filter dropdown persist selection across tabs
+/minion add crm fix timezone display on appointment cards
+
+# Wait for plans...
 /minion list
 
-# Review the plan
-/minion status 3
-
-# Execute it (creates branch, implements, opens PR)
-/minion execute 3 aalok/sticky-tabs
-
-# After reviewers comment, auto-address their feedback
-/minion review 3 --dry-run        # preview what it'll do
-/minion review 3                   # fix valid issues, dismiss noise
+# Execute all at once, each in its own worktree
+/minion batch execute 7,8,9 release/2.1.0
 ```
 
-### With Slack context
+### Addressing PR review feedback
+
+AI reviewers (Devin, Cursor Bugbot) or teammates leave comments on your PR. Triage them first, then let the agent fix the real issues:
 
 ```bash
-# Pull context from a Slack thread
-/minion add crm block outbound calls --slack https://slack.com/archives/C0X.../p1234
+# See what the reviewers said and how minion would handle each comment
+/minion review 5 --dry-run
 
-# Or search Slack for relevant messages
-/minion add api fix auth redirect --slack "auth redirect broken after deploy"
+# Override a verdict (force-fix comment #2, dismiss comment #3)
+/minion review 5 fix:2 dismiss:3
+
+# Or just let it handle everything with auto verdicts
+/minion review 5
 ```
 
-### Batch execution
+### Investigating before acting
+
+Not sure how something works in the codebase? Chat about a task to understand the context before executing:
 
 ```bash
-# Execute multiple planned tasks in parallel
-/minion batch execute 3,4,5 release/1.5.0
+/minion chat 5 how does the current retry logic work? what happens on timeout?
+/minion chat 5 would it be better to use exponential backoff here?
+# Decisions are saved in the task's notes for future reference
 ```
 
-### Monitoring
+### Monitoring a long-running task
+
+Start an executor and get notified when it's done:
 
 ```bash
-# Watch a task — get notified when plan is ready, PR is created, etc.
-/minion watch 3
-
-# Or poll manually
-/loop 5m /minion list
-```
-
-### Chat about a task
-
-```bash
-# Ask questions about the plan or codebase
-/minion chat 3 what tradeoffs did you consider for the state management?
-
-# Follow up naturally
-/minion chat 3 would it be better to use a StreamBuilder here?
+/minion execute 5 fix/webhook-retry
+/minion watch 5    # polls every 2min, notifies on state change, auto-stops when done
 ```
 
 ## File structure
@@ -256,3 +299,9 @@ git pull
 ```
 
 No re-setup needed unless the config format changes.
+
+## Contributing
+
+1. Edit files in `~/.claude/skills/minion/` (it's a git repo)
+2. Create a branch, push, and open a PR
+3. After merge, everyone updates with `git pull`
