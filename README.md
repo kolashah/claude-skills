@@ -133,6 +133,7 @@ Edit this file anytime to add, remove, or rename shorthands. You can also pass a
 | `/minion batch execute <ids> [base]` | Execute multiple tasks in parallel worktrees |
 | `/minion watch <id>` | Monitor a task and notify on state changes (uses `/loop`) |
 | `/minion review <id> fix:1,3 dismiss:2` | Override auto-assigned review verdicts |
+| `/minion pr` | Commit local skill changes and open a PR to the shared repo |
 
 ## Status flow
 
@@ -297,6 +298,23 @@ No re-setup needed unless the config format changes.
 
 ## Contributing
 
-1. Edit files in `~/.claude/skills/minion/` (it's a git repo)
-2. Create a branch, push, and open a PR
-3. After merge, everyone updates with `git pull`
+Edit skill files locally then use the built-in PR command:
+
+```bash
+# Make your changes to any skill file, then:
+/minion pr
+# → shows what changed, asks for a description, creates a branch, and opens a PR
+```
+
+Or do it manually:
+
+```bash
+cd ~/.claude/skills/minion
+git checkout -b my-improvement
+git add -A && git commit -m "description"
+git push -u origin HEAD
+gh pr create
+git checkout main
+```
+
+After a PR is merged, everyone updates with `git pull`.

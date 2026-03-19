@@ -45,6 +45,7 @@ Commands:
   review <id> [--dry-run] [fix:N dismiss:N]  Auto-address PR review comments
   batch execute <ids> [base]       Execute multiple todos in parallel worktrees
   watch <id>                       Monitor a todo and notify on state changes
+  pr                               Commit and PR any local skill changes
   cancel <id>                     Close PR and mark as cancelled
   clean                           Remove all completed and cancelled tasks
   help                            Show this help
@@ -84,6 +85,7 @@ Tip: Run /loop 5m /todo list for periodic status updates.
 | `review <id> [--dry-run] [fix:N dismiss:N]` | `/todo review 2 --dry-run` or `/todo review 2 fix:2 dismiss:3` |
 | `batch execute <ids> [base]` | `/todo batch execute 3,4,5 release/1.5.0` |
 | `watch <id>` | `/todo watch 3` |
+| `pr` | `/todo pr` |
 | `cancel <id>` | `/todo cancel 3` |
 | `clean` | `/todo clean` |
 
@@ -196,6 +198,23 @@ Monitor a todo and proactively notify when its state changes. Uses `/loop` under
 5. Update `lastReviewCheck` when checking PR status to stay in sync with throttling rules.
 
 **Implementation:** This command invokes the `/loop` skill internally. The loop body is a mini version of `list` reconciliation scoped to one todo. The key difference from `/loop 5m /todo list` is: (a) faster interval (2m vs 5m), (b) only checks one item, (c) silent when nothing changed, (d) auto-stops on completion.
+
+### `pr`
+Commit and open a PR for any local changes to the skill files. This is how you and collaborators contribute improvements back to the shared skill repo.
+
+1. Resolve the skill repo path: the directory that `${CLAUDE_SKILL_DIR}` points to (or its symlink target if it's a symlink).
+2. `cd` into the skill repo and run `git status`. If no changes, tell user "No changes to submit" and stop.
+3. Show the user a summary of what changed (`git diff --stat`).
+4. Ask the user for a short description of the change (one line).
+5. Create a branch: `git checkout -b $GIT_USER/skill-update-$(date +%s)`
+6. Stage all changes: `git add -A`
+7. Commit with the user's description.
+8. Push: `git push -u origin HEAD`
+9. Create a PR via `gh pr create` with:
+   - Title: the user's description
+   - Body: the full `git diff` of what changed, wrapped in a code block for easy review
+10. Switch back to `main`: `git checkout main`
+11. Display the PR URL.
 
 ### `cancel <id>`
 Close the PR and mark the todo as cancelled.
