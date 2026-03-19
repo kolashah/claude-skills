@@ -4,7 +4,7 @@ A [Claude Code](https://claude.com/claude-code) skill that manages a cross-repo 
 
 ## What it does
 
-`/minion` turns task descriptions into planned, implemented, and PR'd code changes — without leaving your terminal. Tasks can be anything from a quick one-liner to a detailed multi-line description with context from Slack threads, Linear issues, or pasted conversations.
+`/minion` turns task descriptions into planned, implemented, and PR'd code changes — without leaving your terminal. Tasks can be anything from a quick one-liner to a detailed multi-line description with pasted context.
 
 ```bash
 # A quick one-liner
@@ -15,16 +15,10 @@ A [Claude Code](https://claude.com/claude-code) skill that manages a cross-repo 
   on first install before accessing the app. Use a WebView to load
   https://eliseai.com/policy, add a checkbox + accept button. Store
   acceptance in SharedPreferences, don't reset on logout.
-
-# With Slack context — pull in a full conversation thread
-/minion add api fix the webhook retry logic --slack https://slack.com/archives/C0X.../p1234
-
-# Search Slack for relevant context
-/minion add web fix dashboard latency --slack "dashboard slow after deploy"
 ```
 
 After adding, the skill:
-1. Scopes the task — asks clarifying questions if anything is ambiguous, skips if the description (or Slack context) is clear enough
+1. Scopes the task — asks clarifying questions if anything is ambiguous, skips if the description is clear enough
 2. Spawns a **background planner agent** that explores the repo, reads CLAUDE.md conventions, checks recent commits, and writes a detailed implementation plan
 3. When ready, you review the plan and either execute it or adjust
 4. The **executor agent** implements the plan in an isolated git worktree, runs formatters/linters/tests, commits, pushes, and opens a PR
@@ -71,8 +65,6 @@ After planning, each task gets a verdict:
 - [Claude Code](https://claude.com/claude-code) CLI installed
 - `gh` CLI authenticated (`gh auth status`)
 - Git configured (`git config user.name`)
-- Slack MCP server configured (optional, for `--slack` flag)
-- Linear MCP server configured (optional, for linking Linear issues)
 
 ### Setup
 
@@ -159,12 +151,15 @@ not started → planning... → plan ready → in progress → pr open → compl
 
 ## Usage examples
 
-### Bug fix from a Slack escalation
+### Bug fix with context
 
-A teammate reports a bug in Slack. You pull the full conversation into the task so the planner has context on what broke, when, and who's affected:
+Paste in the details so the planner has full context on what broke and how to fix it:
 
 ```bash
-/minion add api fix the webhook retry logic --slack https://slack.com/archives/C0X.../p1234
+/minion add api fix the webhook retry logic — currently retries
+  are firing immediately instead of using exponential backoff.
+  The retry queue in EventProcessor.processWebhook is using a
+  fixed 1s delay. Should use 1s, 2s, 4s, 8s, 16s with jitter.
 
 /minion list                       # check when plan is ready
 /minion status 5                   # review the plan

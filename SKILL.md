@@ -34,7 +34,6 @@ When help is requested, first read `$HOME_DIR/.claude/todo-config.json` to get t
 
 Commands:
   add <repo> <description>        Add a task and auto-plan in background
-    --slack <url|search>          Pull context from a Slack thread URL or search query
   list                            Show all todos with status table
   status <id>                     Show full details, plan, and PR link
   update <id> <note>              Add context/notes to a task
@@ -59,7 +58,6 @@ Status flow:
 
 Examples:
   /todo add crm make page tabs sticky
-  /todo add crm block outbound calls --slack https://slack.com/archives/C0X.../p1234
   /todo execute 3 my-feature-branch
   /todo execute 3 my-feature-branch release/1.5.0
   /todo status 3
@@ -74,7 +72,7 @@ Tip: Run /loop 5m /todo list for periodic status updates.
 
 | Command | Example |
 |---------|---------|
-| `add <repo> <description> [--slack <url\|query>]` | `/todo add crm block outbound calls --slack https://slack.com/archives/C0X.../p1234` |
+| `add <repo> <description>` | `/todo add crm add rate limiting to the users endpoint` |
 | `list` | `/todo list` |
 | `status <id>` | `/todo status 3` |
 | `update <id> <note>` | `/todo update 3 only affects settings page` |
@@ -98,7 +96,7 @@ Repo resolution order when parsing the first argument of `add`:
 
 ## Storage
 
-`$HOME_DIR/.claude/todos.json` — fields: `id`, `description`, `repo`, `repoPath`, `status`, `created`, `updated`, `notes[]`, `slackContext`, `verdict`, `branch`, `baseBranch`, `worktreePath`, `pr`, `needsReview`, `lastReviewCheck`. Auto-increment `nextId`. Create file with `{"nextId": 1, "todos": []}` if missing.
+`$HOME_DIR/.claude/todos.json` — fields: `id`, `description`, `repo`, `repoPath`, `status`, `created`, `updated`, `notes[]`, `verdict`, `branch`, `baseBranch`, `worktreePath`, `pr`, `needsReview`, `lastReviewCheck`. Auto-increment `nextId`. Create file with `{"nextId": 1, "todos": []}` if missing.
 
 Plan and result files are always at `$HOME_DIR/.claude/todo-plans/plan-{id}.md`, `result-{id}.md`, and `review-{id}.md` — derived from the todo's `id`, never stored as a field.
 
@@ -118,16 +116,11 @@ Plan and result files are always at `$HOME_DIR/.claude/todo-plans/plan-{id}.md`,
 ## Command Details
 
 ### `add`
-1. Parse repo (first word) + description (everything after repo, up to `--slack` if present). Resolve repo path using the resolution order above.
-2. **Slack context** — if `--slack` is present, extract the value after it:
-   - If it looks like a Slack URL (`https://...slack.com/archives/...`): use Slack MCP tools to fetch that thread/message and its replies. Extract the conversation into a readable summary.
-   - If it's a plain text query: use Slack MCP search tools to find relevant messages. Present the top results and let the user confirm which thread(s) to include.
-   - Store the extracted Slack conversation in the todo's `slackContext` field (a string summary of the relevant messages, including who said what).
-   - If Slack MCP tools are not available, tell the user to authenticate: "Slack MCP not connected — restart Claude Code and authenticate when prompted, or paste the conversation directly."
-3. If task is ambiguous, ask 1-2 brief scoping questions. Skip if already clear. Slack context counts — if the thread provides enough detail, skip scoping.
-4. Save todo with status `not started`, scoping answers in `notes`, Slack summary in `slackContext`.
-5. Display table, then set status `planning...` and spawn background planner (see Agents). The planner receives `slackContext` as additional context.
-6. First time per conversation, mention: "Tip: Run `/loop 5m /todo list` for periodic updates."
+1. Parse repo (first word) + description (everything after repo). Resolve repo path using the resolution order above.
+2. If task is ambiguous, ask 1-2 brief scoping questions. Skip if already clear.
+3. Save todo with status `not started`, scoping answers in `notes`.
+4. Display table, then set status `planning...` and spawn background planner (see Agents).
+5. First time per conversation, mention: "Tip: Run `/loop 5m /todo list` for periodic updates."
 
 ### `list`
 Render markdown table: `ID | Repo | Description | Status | Branch / PR | Created`
@@ -262,6 +255,6 @@ Reset status to `planning...`. Spawn background planner. This also works for tod
 
 ### Planner (used by `add` and `plan`)
 1. Read template from `${CLAUDE_SKILL_DIR}/planner-prompt.md`.
-2. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{id}`, `{description}`, `{repo}`, `{slackContext}`, `{homedir}` in the template.
+2. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{id}`, `{description}`, `{repo}`, `{homedir}` in the template.
 3. Spawn Agent with `run_in_background: true` using the filled prompt.
 4. Tell user: "Background planner started for todo #{id}. Use `/todo list` or `/todo status {id}` to check when ready."

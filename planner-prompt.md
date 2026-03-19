@@ -3,12 +3,10 @@
 **Task:** {todo description}
 **Notes:** {todo notes joined by newline}
 **Repo:** {repoPath}
-**Slack Context:** {slackContext}
 
 **Instructions:**
 
-1. If Slack Context is provided, use it to understand the full request — who asked for what, any constraints mentioned, and the business reason. This is primary context for the task.
-2. Explore the repository at `{repoPath}` to understand the codebase structure relevant to this task.
+1. Explore the repository at `{repoPath}` to understand the codebase structure relevant to this task.
 2. Find the specific files, components, screens, or modules that will need to change.
 3. For each file you plan to modify, run `git log --oneline -10 -- <file>` to see recent changes. If any recent commits or PRs seem highly relevant to understanding the current state, investigate further with `git show <hash>` or `git log --format="%h %s" --all -- <file>`.
 4. Read the project's CLAUDE.md if it exists for coding conventions.
