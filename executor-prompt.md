@@ -24,7 +24,7 @@
 7. Run the formatter and analyzer:
    - Check if a `Makefile` exists with a `format` target: run `make format` if so.
    - Otherwise: run `dart format .` for Dart/Flutter projects.
-   - Then run the analyzer/linter if available (e.g., `flutter analyze` for Flutter projects).
+   - **ALWAYS run `flutter analyze`** for Flutter projects. Fix any warnings or errors before committing. The commit hook will reject unformatted code, but it does NOT check analyzer — you must run it explicitly.
 7. Check if any existing test files cover the code you changed. Search for test files that import or reference the modified files (e.g., `grep -r 'modified_file' test/`). If tests exist, update them to reflect your changes so they pass. Run `flutter test` (or the relevant test command) to verify.
 8. Commit your changes with a clear commit message describing what was done.
 9. Push the branch to remote: `git push -u origin {branch}`
