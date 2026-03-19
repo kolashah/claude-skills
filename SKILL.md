@@ -54,6 +54,7 @@ Commands:
   review <id> [--dry-run] [fix:N dismiss:N]  Auto-address PR review comments
   batch execute <ids> [base]       Execute multiple todos in parallel worktrees
   watch <id>                       Monitor a todo and notify on state changes
+  config                            Show or update settings
   pr                               Commit and PR any local skill changes
   cancel <id>                     Close PR and mark as cancelled
   clean                           Remove all completed and cancelled tasks
@@ -94,6 +95,7 @@ Tip: Run /loop 5m /todo list for periodic status updates.
 | `review <id> [--dry-run] [fix:N dismiss:N]` | `/todo review 2 --dry-run` or `/todo review 2 fix:2 dismiss:3` |
 | `batch execute <ids> [base]` | `/todo batch execute 3,4,5 release/1.5.0` |
 | `watch <id>` | `/todo watch 3` |
+| `config [key] [value]` | `/todo config` or `/todo config squashCommits true` |
 | `pr` | `/todo pr` |
 | `cancel <id>` | `/todo cancel 3` |
 | `clean` | `/todo clean` |
@@ -227,6 +229,13 @@ Monitor a todo and proactively notify when its state changes. Uses `/loop` under
 5. Update `lastReviewCheck` when checking PR status to stay in sync with throttling rules.
 
 **Implementation:** This command invokes the `/loop` skill internally. The loop body is a mini version of `list` reconciliation scoped to one todo. The key difference from `/loop 5m /todo list` is: (a) faster interval (2m vs 5m), (b) only checks one item, (c) silent when nothing changed, (d) auto-stops on completion.
+
+### `config [key] [value]`
+Show or update settings in `$HOME_DIR/.claude/todo-config.json`. Fast-path — no status reconciliation.
+
+- **No args** (`/todo config`): display current config as a formatted table.
+- **Key only** (`/todo config squashCommits`): display that setting's current value.
+- **Key + value** (`/todo config squashCommits true`): update the setting, write the file, confirm. Boolean values accept `true`/`false`. The `repos` field cannot be set this way — edit the JSON directly.
 
 ### `pr`
 Commit and open a PR for any local changes to the skill files. Automatically bumps the version and adds release notes.
