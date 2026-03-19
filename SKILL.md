@@ -105,6 +105,26 @@ Repo resolution order when parsing the first argument of `add`:
 2. **Absolute path** — if the argument starts with `/`, use it directly (verify it exists).
 3. **Error** — if no match, tell the user: "Unknown repo `<name>`. Add it to `~/.claude/todo-config.json` or pass an absolute path."
 
+## Config
+
+`$HOME_DIR/.claude/todo-config.json` supports these fields:
+
+```json
+{
+  "repos": {
+    "shorthand": "/absolute/path/to/repo"
+  },
+  "squashCommits": false
+}
+```
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `repos` | required | Map of shorthand names to absolute repo paths |
+| `squashCommits` | `false` | When `true`, follow-up changes and review fixes amend the existing commit and force-push. When `false`, creates new commits and pushes normally. |
+
+Read `squashCommits` from the config during bootstrap and pass it as `{squashCommits}` when filling executor and reviewer prompt templates.
+
 ## Storage
 
 `$HOME_DIR/.claude/todos.json` — fields: `id`, `description`, `repo`, `repoPath`, `status`, `created`, `updated`, `notes[]`, `verdict`, `branch`, `baseBranch`, `worktreePath`, `pr`, `needsReview`, `lastReviewCheck`. Auto-increment `nextId`. Create file with `{"nextId": 1, "todos": []}` if missing.
@@ -282,7 +302,7 @@ Reset status to `planning...`. Spawn background planner. This also works for tod
 4. Set status `in progress`, save `branch` and `baseBranch`. Write JSON.
 5. Read plan from `$HOME_DIR/.claude/todo-plans/plan-{id}.md`.
 6. Read executor prompt template from `${CLAUDE_SKILL_DIR}/executor-prompt.md`.
-7. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{branch}`, `{baseBranch}`, `{id}`, `{homedir}`, and `{plan contents}` in the template.
+7. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{branch}`, `{baseBranch}`, `{id}`, `{homedir}`, `{squashCommits}`, and `{plan contents}` in the template.
 8. Spawn Agent with `run_in_background: true` and `isolation: "worktree"` using the filled prompt.
 9. Tell user: "Execution started for todo #{id} on branch `{branch}` (base: `{baseBranch || auto-detect}`). Use `/todo status {id}` to check progress."
 

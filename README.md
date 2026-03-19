@@ -92,9 +92,15 @@ After setup, your repo shorthands live in `~/.claude/todo-config.json`:
     "crm": "/Users/you/projects/my-crm-app",
     "api": "/Users/you/projects/my-api",
     "web": "/Users/you/projects/my-web-app"
-  }
+  },
+  "squashCommits": false
 }
 ```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `repos` | required | Map of shorthand names to absolute repo paths |
+| `squashCommits` | `false` | When `true`, follow-ups and review fixes amend + force-push to keep a single commit. When `false`, creates normal commits. |
 
 Edit this file anytime to add, remove, or rename shorthands. You can also pass absolute paths directly:
 

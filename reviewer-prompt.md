@@ -24,8 +24,9 @@
    - Run formatter: check for `Makefile` with `format` target first (`make format`), otherwise `dart format .`.
    - Run analyzer: `flutter analyze` or equivalent.
    - Check and update tests if affected.
-6. Amend the existing commit: `git add -A && git commit --amend --no-edit`
-7. Force push: `git push --force-with-lease`
+6. Check `{squashCommits}`:
+   - If **true**: amend the existing commit (`git add -A && git commit --amend --no-edit`) and force push (`git push --force-with-lease`).
+   - If **false** (default): create a new commit describing the review fixes (`git add -A && git commit -m "Address review feedback"`) and push normally (`git push`).
 8. Write a summary of what was addressed to `{homedir}/.claude/todo-plans/review-{id}.md`:
 
 ```markdown

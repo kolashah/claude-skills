@@ -67,8 +67,7 @@ If the user asks for small follow-up changes on a todo that already has a PR (e.
 
 1. Make the requested changes.
 2. Run the same formatting, linting, l10n, and test steps as above.
-3. **Amend the existing commit** instead of creating a new one: `git add -A && git commit --amend --no-edit`
-4. **Force push** to update the PR: `git push --force-with-lease`
-5. Update the result file if the changes are significant enough to note.
-
-This keeps the commit history clean for release branches. Only use amend + force push for small follow-ups. If the follow-up is a substantial change, create a new commit instead.
+3. Check `{squashCommits}`:
+   - If **true**: amend the existing commit (`git add -A && git commit --amend --no-edit`) and force push (`git push --force-with-lease`). This keeps a single clean commit for release branches.
+   - If **false** (default): create a new commit with a descriptive message and push normally (`git push`).
+4. Update the result file if the changes are significant enough to note.
