@@ -206,21 +206,28 @@ Monitor a todo and proactively notify when its state changes. Uses `/loop` under
 **Implementation:** This command invokes the `/loop` skill internally. The loop body is a mini version of `list` reconciliation scoped to one todo. The key difference from `/loop 5m /todo list` is: (a) faster interval (2m vs 5m), (b) only checks one item, (c) silent when nothing changed, (d) auto-stops on completion.
 
 ### `pr`
-Commit and open a PR for any local changes to the skill files. This is how you and collaborators contribute improvements back to the shared skill repo.
+Commit and open a PR for any local changes to the skill files. Automatically bumps the version and adds release notes.
 
 1. Resolve the skill repo path: the directory that `${CLAUDE_SKILL_DIR}` points to (or its symlink target if it's a symlink).
 2. `cd` into the skill repo and run `git status`. If no changes, tell user "No changes to submit" and stop.
 3. Show the user a summary of what changed (`git diff --stat`).
 4. Ask the user for a short description of the change (one line).
-5. Create a branch: `git checkout -b $GIT_USER/skill-update-$(date +%s)`
-6. Stage all changes: `git add -A`
-7. Commit with the user's description.
-8. Push: `git push -u origin HEAD`
-9. Create a PR via `gh pr create` with:
-   - Title: the user's description
-   - Body: the full `git diff` of what changed, wrapped in a code block for easy review
-10. Switch back to `main`: `git checkout main`
-11. Display the PR URL.
+5. **Auto-bump version** — read the latest `## vX.Y.Z` from `RELEASE_NOTES.md`, bump the patch number (e.g., `v1.0.0` → `v1.0.1`). If the changes are significant (new commands, breaking changes), bump minor instead (e.g., `v1.0.0` → `v1.1.0`). Use your judgment based on the diff.
+6. **Add release notes** — prepend a new section to `RELEASE_NOTES.md`:
+   ```markdown
+   ## vX.Y.Z — YYYY-MM-DD
+
+   - Bullet points summarizing the changes (generate from the diff + user's description)
+   ```
+7. Create a branch: `git checkout -b $GIT_USER/skill-update-$(date +%s)`
+8. Stage all changes (including the updated `RELEASE_NOTES.md`): `git add -A`
+9. Commit with message: `vX.Y.Z: <user's description>`
+10. Push: `git push -u origin HEAD`
+11. Create a PR via `gh pr create` with:
+    - Title: `vX.Y.Z: <user's description>`
+    - Body: the release notes entry + the full `git diff` wrapped in a details block
+12. Switch back to `main`: `git checkout main`
+13. Display the PR URL.
 
 ### `cancel <id>`
 Close the PR and mark the todo as cancelled.
