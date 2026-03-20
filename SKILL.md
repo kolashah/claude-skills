@@ -9,6 +9,8 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob, Agent
 
 Persistent todo list at `~/.claude/todos.json`. Parse command from `$ARGUMENTS`. Default to `list` if empty. If `$ARGUMENTS` is `help` or `--help` or `-h`, show the help output below and stop.
 
+**Flexible argument order:** Users may put the command and ID in any order (e.g., `review 16`, `16 review`, `status 3`, `3 status`). When parsing `$ARGUMENTS`, identify the command keyword and the numeric ID regardless of position. For commands that take additional args (e.g., `execute <id> <branch>`, `update <id> <note>`, `chat <id> <message>`), the ID and command keyword can still be in either order — everything else is the remaining arguments.
+
 ## Bootstrap
 
 On **every invocation**, before processing any command, resolve these runtime values silently (no output to user):
