@@ -40,7 +40,8 @@
     - testing steps
     ```
 13. After creating the PR, update `{homedir}/.claude/todos.json`: set the todo's `status` to `pr open`, save the PR URL in `pr`, and **write the resolved base branch back to `baseBranch`** (so the JSON reflects what was actually used, even if auto-detected). Update the `updated` timestamp.
-14. Write a summary of what you did to `{homedir}/.claude/todo-plans/result-{id}.md` in this format:
+14. **Clean up the worktree.** Run `git -C {repoPath} worktree remove <your worktree path> --force`. The worktree serves no purpose after the PR is pushed and blocks the user from checking out the branch in the main repo.
+15. Write a summary of what you did to `{homedir}/.claude/todo-plans/result-{id}.md` in this format:
 
 ```markdown
 # Result: {description}
