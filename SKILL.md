@@ -176,14 +176,14 @@ Reconcile only non-terminal statuses in **one parallel batch**:
 3. Write JSON once with all updates.
 4. Render table. No narration between steps.
 
-For `auto-execute` verdicts discovered during list: mention it after the table, don't block on it.
+For `auto-execute` verdicts discovered during list: **immediately trigger auto-execution** (see Auto-execute below) after rendering the table. NEVER ask the user for confirmation — just execute it.
 
 Branch/PR column: `—` for not started/planning/plan ready, branch name for in progress, `[PR #N](url)` for pr open/complete. Append ` (review)` if `needsReview` is true.
 
 After table, show one-line actionable hints only for items that need attention.
 
 ### `status <id>`
-Show full todo details. Same reconciliation as `list` for that item. Display plan contents and/or result file + PR link as applicable.
+Show full todo details. Same reconciliation as `list` for that item. Display plan contents and/or result file + PR link as applicable. If reconciliation discovers an `auto-execute` verdict, **immediately trigger auto-execution** (see Auto-execute below) after displaying the status. NEVER ask the user — just execute.
 
 ### `update <id> <note>`
 Append to `notes[]`. Update timestamp.
@@ -222,7 +222,8 @@ Monitor a todo and proactively notify when its state changes. Uses `/loop` under
    - `in progress` → check if result file exists
    - `pr open` → check if PR merged or has new review comments
 3. On each loop iteration, compare against the baseline status. **Only output if something changed:**
-   - `planning... → plan ready`: "Todo #{id} plan is ready (verdict: {verdict}). Run `/minion status {id}` to review, or `/minion execute {id} <branch>` to start."
+   - `planning... → plan ready` with `auto-execute` verdict: **immediately trigger auto-execution** (see Auto-execute below). Output: "Todo #{id} plan ready — auto-executing on branch `{branch}`."
+   - `planning... → plan ready` with other verdicts: "Todo #{id} plan is ready (verdict: {verdict}). Run `/minion status {id}` to review, or `/minion execute {id} <branch>` to start."
    - `in progress → pr open`: "Todo #{id} PR created: {pr url}"
    - `pr open → complete`: "Todo #{id} PR merged!"
    - `pr open` + new review comments: "Todo #{id} has new review comments. Run `/minion review {id} --dry-run` to triage."
@@ -334,3 +335,19 @@ Reset status to `planning...`. Spawn background planner. This also works for tod
 2. Replace `{todo description}`, `{todo notes}`, `{repoPath}`, `{id}`, `{description}`, `{repo}`, `{homedir}` in the template.
 3. Spawn Agent with `run_in_background: true` using the filled prompt.
 4. Tell user: "Background planner started for todo #{id}. Use `/minion list` or `/minion status {id}` to check when ready."
+
+## Auto-execute
+
+**CRITICAL:** When a plan's verdict is `auto-execute` and it is discovered during any reconciliation (`list`, `status`, `watch`, or background agent notification), you MUST immediately begin execution. **NEVER** ask the user for confirmation, input, or whether they want to proceed. **NEVER** present options like "Want me to execute it?" or "Should I hold?". **NEVER** mention other todos, PRs, or dependencies as a reason to pause — the `auto-execute` verdict already means the planner determined this is safe to run. Just execute it silently and report that it started.
+
+Steps (execute all of these without any user interaction):
+
+1. **Generate semantic branch name:** `$GIT_USER/<2-4 keyword slug from description>` (e.g., `aalok/sticky-page-tabs`, `aalok/offline-persistent-footer`). Extract the most descriptive keywords from the todo description, kebab-case them, and keep it concise. Sanitize `$GIT_USER` for branch names (lowercase, replace spaces with `-`).
+2. **Auto-detect base branch:** check for the latest `release/*` branch in the repo, fall back to `main`.
+3. **Set status** to `in progress`, save `branch` and `baseBranch`. Write JSON.
+4. **Read plan** from `$HOME_DIR/.claude/todo-plans/plan-{id}.md`.
+5. **Read executor prompt** from `${CLAUDE_SKILL_DIR}/executor-prompt.md`, fill template.
+6. **Spawn executor agent** with `run_in_background: true` and `isolation: "worktree"`.
+7. **Tell user:** "Auto-executing todo #{id} on branch `{branch}` (base: `{baseBranch}`). Use `/minion status {id}` to check progress."
+
+This is the same flow as `execute`, but the branch name is auto-generated and the user is never asked to provide one. The only output the user should see is the notification that execution has started — no questions, no options, no confirmations.
