@@ -14,6 +14,44 @@ PLANS_DIR="$CLAUDE_DIR/todo-plans"
 echo "=== /minion skill setup ==="
 echo ""
 
+# 0. Check prerequisites
+MISSING=0
+
+if ! command -v git &>/dev/null; then
+  echo "✗ git not found. Install git first."
+  MISSING=1
+elif [ -z "$(git config user.name 2>/dev/null)" ]; then
+  echo "✗ git user.name not set. Run: git config --global user.name \"Your Name\""
+  MISSING=1
+else
+  echo "✓ git configured ($(git config user.name))"
+fi
+
+if ! command -v gh &>/dev/null; then
+  echo "✗ gh CLI not found. Install: https://cli.github.com"
+  MISSING=1
+elif ! gh auth status &>/dev/null; then
+  echo "✗ gh CLI not authenticated. Run: gh auth login"
+  MISSING=1
+else
+  echo "✓ gh CLI authenticated"
+fi
+
+if ! command -v python3 &>/dev/null; then
+  echo "✗ python3 not found. Required for settings.json updates."
+  MISSING=1
+else
+  echo "✓ python3 available"
+fi
+
+if [ $MISSING -eq 1 ]; then
+  echo ""
+  echo "Fix the issues above and re-run this script."
+  exit 1
+fi
+
+echo ""
+
 # 1. Create todo-plans directory
 mkdir -p "$PLANS_DIR"
 echo "✓ Created $PLANS_DIR"
@@ -43,8 +81,9 @@ fi
 if [ "${SKIP_CONFIG}" != "true" ]; then
   echo ""
   echo "Configure your repo shorthands."
+  echo "These map short names to absolute paths of your local repos."
   echo "Enter shorthand and absolute path pairs (empty shorthand to finish):"
-  echo "  Example: crm /Users/jane/projects/elise-crm-mobile"
+  echo "  Example: crm /Users/$(whoami)/projects/elise-crm-mobile"
   echo ""
 
   REPOS="{"
@@ -87,6 +126,7 @@ echo "Adding /minion permissions to $SETTINGS_FILE..."
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
 
 TODO_PERMISSIONS=(
+  # File permissions for todo state
   "Read($HOME_DIR/.claude/todos.json)"
   "Write($HOME_DIR/.claude/todos.json)"
   "Edit($HOME_DIR/.claude/todos.json)"
@@ -98,6 +138,13 @@ TODO_PERMISSIONS=(
   "Read($HOME_DIR/.claude/todo-last-seen-version)"
   "Write($HOME_DIR/.claude/todo-last-seen-version)"
   "Read($SCRIPT_DIR/*)"
+  # Bash permissions for git, gh, and common shell commands
+  "Bash(git *)"
+  "Bash(gh *)"
+  "Bash(echo *)"
+  "Bash(test *)"
+  "Bash(date *)"
+  "Bash(cat *)"
 )
 
 if [ ! -f "$SETTINGS_FILE" ]; then
@@ -124,7 +171,6 @@ else
   ADDED=0
   for p in "${TODO_PERMISSIONS[@]}"; do
     if ! grep -qF "$p" "$SETTINGS_FILE"; then
-      # Use python to safely add to the allow array (available on macOS and Linux)
       python3 -c "
 import json, sys
 with open('$SETTINGS_FILE', 'r') as f:
