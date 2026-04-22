@@ -1,5 +1,11 @@
 # Release Notes
 
+## v1.1.0 — 2026-04-21
+
+- **Auto-execute** — tasks with `auto-execute` verdict are now immediately executed without confirmation during `list`, `status`, and `watch` reconciliation. Branch names are auto-generated as `user/semantic-slug`.
+- Auto-execute triggers during `watch` loops when a plan transitions to `plan ready`
+- Strengthened language throughout SKILL.md to prevent any confirmation prompts for auto-execute verdicts
+
 ## v1.0.0 — 2026-03-19
 
 Initial shared release.

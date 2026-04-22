@@ -20,11 +20,11 @@ A [Claude Code](https://claude.com/claude-code) skill that manages a cross-repo 
 After adding, the skill:
 1. Scopes the task — asks clarifying questions if anything is ambiguous, skips if the description is clear enough
 2. Spawns a **background planner agent** that explores the repo, reads CLAUDE.md conventions, checks recent commits, and writes a detailed implementation plan
-3. When ready, you review the plan and either execute it or adjust
+3. Simple tasks get an `auto-execute` verdict and **start executing immediately** — no review needed. Complex tasks wait for you to review the plan and decide.
 4. The **executor agent** implements the plan in an isolated git worktree, runs formatters/linters/tests, commits, pushes, and opens a PR
 5. When reviewers leave comments, the **reviewer agent** triages them, fixes valid issues, dismisses noise, and pushes the fixes
 
-You stay in control at every step. The minions do the grunt work.
+You stay in control of what matters. Simple tasks run autonomously; complex ones wait for your input.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ You ──── /minion ──── Planner Agent (background)
 
 After planning, each task gets a verdict:
 
-- **auto-execute** — Simple, low-risk, no architectural decisions. Safe to execute without review.
+- **auto-execute** — Simple, low-risk, no architectural decisions. **Automatically executed** without confirmation — a branch is generated and the executor starts immediately.
 - **review** — Complex or risky. You should read the plan before executing.
 - **needs-input** — Ambiguous requirements. The planner has questions for you.
 
@@ -151,7 +151,7 @@ not started → planning... → plan ready → in progress → pr open → compl
 
 - **not started** — task just added, planner about to start
 - **planning...** — background planner agent is exploring the repo
-- **plan ready** — plan written, waiting for you to review/execute
+- **plan ready** — plan written; `auto-execute` tasks start immediately, others wait for you to review/execute
 - **in progress** — executor agent is implementing in a worktree
 - **pr open** — PR created, waiting for review/merge
 - **complete** — PR merged (auto-detected)
@@ -187,14 +187,15 @@ You know exactly what you want. Give a thorough description upfront so the plann
 
 ### Quick refactor across files
 
-Small, mechanical changes that touch several files but follow an obvious pattern:
+Small, mechanical changes that touch several files but follow an obvious pattern. These typically get an `auto-execute` verdict and start running on their own:
 
 ```bash
 /minion add web rename all instances of UserProfile to ResidentProfile
   in the dashboard module. Update imports, types, and test references.
 
-# Plan comes back as auto-execute (low risk, mechanical)
-/minion execute 12 refactor/resident-profile-rename
+# Plan comes back as auto-execute — automatically starts executing
+# on a generated branch like aalok/resident-profile-rename
+/minion list    # check progress
 ```
 
 ### Sprint batch — plan and execute multiple tasks
